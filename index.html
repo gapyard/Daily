@@ -21,21 +21,30 @@
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .muted{color:var(--muted);font-size:12px}
     .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .photos img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #374151}
+    .photos img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #374151;cursor:pointer}
     .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     button{border:0;border-radius:10px;padding:10px 14px;background:var(--btn);color:var(--text);cursor:pointer}
     button.primary{background:var(--primary);color:#fff}
     button.danger{background:var(--danger);color:#fff}
-    /* Timeline */
-    #timelineList{display:grid;gap:8px}
+    /* Timeline (one line per record) */
+    #timelineList{display:grid;gap:6px}
     .rowline{
-      border:1px solid var(--line);border-radius:12px;background:#0b1220;padding:10px;display:grid;gap:6px
+      border:1px solid var(--line);border-radius:10px;background:#0b1220;padding:8px 10px;
+      display:flex;align-items:center;gap:10px;min-height:42px
     }
-    .rowline-head{display:flex;align-items:center;gap:10px}
-    .badge{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 8px;font-size:12px}
-    .rowline-actions{margin-left:auto;display:flex;gap:6px}
+    .rowline-text{
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; font-size:14px
+    }
+    .rowline-actions{display:flex;gap:6px;margin-left:8px}
     .btn-ghost{background:#1f2937; color:#e5e7eb; padding:6px 8px; border-radius:8px; font-size:12px}
-    .inline-muted{color:var(--muted);font-size:13px}
+    .thumbs-line{display:flex;gap:6px;margin-left:10px}
+    .thumbs-line img{width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid #374151;cursor:pointer}
+    /* Lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100}
+    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid #334155}
+    .lightbox .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;color:#e2e8f0;background:#1f2937;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;user-select:none}
+    .lightbox .prev{left:14px} .lightbox .next{right:14px}
+    .lightbox .close{position:absolute;top:14px;right:14px;font-size:20px;background:#dc2626}
   </style>
 </head>
 <body>
@@ -50,7 +59,7 @@
         </div>
         <div>
           <label>วันในสัปดาห์</label>
-          <div id="weekday" class="badge">—</div>
+          <div id="weekday" style="margin-top:12px;background:#1f2937;color:#9ca3af;border-radius:999px;display:inline-block;padding:2px 8px;font-size:12px">—</div>
         </div>
       </div>
 
@@ -110,15 +119,23 @@
     </div>
   </div>
 
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox">
+    <button class="nav prev">&lt;</button>
+    <img id="lightboxImg" src="" alt="">
+    <button class="nav next">&gt;</button>
+    <button class="nav close">ปิด</button>
+  </div>
+
 <script>
 /* ===== Config ===== */
-const CLEAR_AFTER_SAVE = true; // เปลี่ยนเป็น false ถ้าไม่อยากให้เคลียร์ฟอร์มหลังบันทึก
+const CLEAR_AFTER_SAVE = true;
 
 /* ===== Helpers & DB ===== */
 const $ = (id)=>document.getElementById(id);
 const WEEKDAYS = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
 const todayISO = ()=> new Date().toISOString().slice(0,10);
-function toWeekday(iso){ const d=new Date(iso); return isNaN(d)?"—":WEEKDAYS[d.getDay()]; }
+const toWeekday = iso => { const d=new Date(iso); return isNaN(d)?"—":WEEKDAYS[d.getDay()]; };
 
 function readDB(){ try{ const raw=localStorage.getItem('dj_db'); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
 function writeDB(db){ localStorage.setItem('dj_db', JSON.stringify(db)); }
@@ -142,13 +159,13 @@ function resizeImage(file, maxW=1280, quality=0.85){
   });
 }
 
-/* ===== UI Bindings ===== */
+/* ===== UI ===== */
 function updateWeekday(){ $('weekday').textContent = toWeekday($('date').value); }
 $('date').addEventListener('change', updateWeekday);
 
 function renderPhotos(arr){
   const wrap=$('photosPreview'); wrap.innerHTML='';
-  (arr||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; wrap.appendChild(img); });
+  (arr||[]).forEach((src,idx)=>{ const img=document.createElement('img'); img.src=src; img.onclick=()=>openLightbox(arr, idx); wrap.appendChild(img); });
 }
 
 /* ===== Place History (datalist) ===== */
@@ -173,7 +190,6 @@ async function saveToday(){
   const food=$('food').value.trim();
   const notes=$('notes').value.trim();
 
-  // photos: ถ้ามีไฟล์ใหม่ -> ย่อแล้วบันทึก, ถ้าไม่มี -> เก็บของเดิมไว้
   let photos=[];
   const files=[...$('photosInput').files].slice(0,3);
   if(files.length){
@@ -183,16 +199,13 @@ async function saveToday(){
   db[d] = { place, place_note, food, notes, photos };
   writeDB(db);
 
-  // อัปเดตรายการ & ประวัติสถานที่
   renderTimeline();
   buildPlaceHistoryOptions();
 
   if (CLEAR_AFTER_SAVE) {
-    // เคลียร์เฉพาะฟอร์ม (ไม่ยุ่งกับวันที่)
     $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
     $('photosInput').value=''; renderPhotos([]);
   } else {
-    // โหลดข้อมูลที่เพิ่งบันทึกกลับขึ้นฟอร์ม (คงค่าไว้)
     loadToday();
   }
   alert('บันทึกแล้ว ✓');
@@ -221,57 +234,82 @@ function clearToday(){
   }
 }
 
-/* ===== Timeline (latest first) ===== */
+/* ===== Timeline (one-line + thumbnails + small actions on right) ===== */
+function oneLineText(it){
+  // "เสาร์ 2025-08-23 The Mall เดินเล่น ข้าว โน้ต…"
+  const bits = [
+    toWeekday(it.date),
+    it.date,
+    it.place || '',
+    it.place_note || '',
+    it.food || '',
+    it.notes ? it.notes.replace(/\s+/g,' ').trim() : ''
+  ].filter(Boolean);
+  return bits.join(' ');
+}
+
 function renderTimeline(){
   const list=$('timelineList');
   const db=readDB();
   const arr=Object.entries(db).map(([date,e])=>({date,...e}));
-  arr.sort((a,b)=> b.date.localeCompare(a.date)); // ล่าสุดอยู่บน
+  arr.sort((a,b)=> b.date.localeCompare(a.date));
 
   if(!arr.length){ list.innerHTML='<div class="muted">ยังไม่มีบันทึก</div>'; return; }
   list.innerHTML='';
   arr.forEach(it=>{
-    const row=document.createElement('div');
-    row.className='rowline';
+    const row=document.createElement('div'); row.className='rowline';
 
-    const head=document.createElement('div');
-    head.className='rowline-head';
-    head.innerHTML=`<strong>${it.date}</strong><span class="badge">${toWeekday(it.date)}</span>`;
+    const txt=document.createElement('div'); txt.className='rowline-text'; txt.textContent=oneLineText(it);
 
-    const actions=document.createElement('div');
-    actions.className='rowline-actions';
+    // thumbnails (click to enlarge)
+    const thumbs=document.createElement('div'); thumbs.className='thumbs-line';
+    (it.photos||[]).forEach((src,idx)=>{
+      const im=document.createElement('img'); im.src=src; im.onclick=()=>openLightbox(it.photos, idx); thumbs.appendChild(im);
+    });
+
+    const actions=document.createElement('div'); actions.className='rowline-actions';
     const view=document.createElement('button'); view.className='btn-ghost'; view.textContent='เปิดดู/แก้';
     view.onclick=()=>{ $('date').value=it.date; updateWeekday(); loadToday(); window.scrollTo({top:0,behavior:'smooth'}); };
     const del=document.createElement('button'); del.className='btn-ghost'; del.textContent='ลบ';
     del.onclick=()=>{ const db=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete db[it.date]; writeDB(db); renderTimeline(); buildPlaceHistoryOptions(); } };
     actions.appendChild(view); actions.appendChild(del);
-    head.appendChild(actions);
 
-    const line=document.createElement('div');
-    line.className='inline-muted';
-    const parts=[];
-    if(it.place) parts.push(`📍 ${it.place}`);
-    if(it.place_note) parts.push(`📝 ${it.place_note}`);
-    if(it.food) parts.push(`🍚 ${it.food}`);
-    line.textContent=parts.join('   •   ');
-
-    const notes=document.createElement('div');
-    if(it.notes){ notes.textContent=it.notes; notes.style.whiteSpace='pre-wrap'; }
-
-    const pics=document.createElement('div'); pics.className='photos';
-    (it.photos||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; pics.appendChild(img); });
-
-    row.appendChild(head);
-    if(parts.length) row.appendChild(line);
-    if(it.notes) row.appendChild(notes);
-    if((it.photos||[]).length) row.appendChild(pics);
+    row.appendChild(txt);
+    if((it.photos||[]).length) row.appendChild(thumbs);
+    row.appendChild(actions);
     list.appendChild(row);
   });
 }
 
+/* ===== Lightbox ===== */
+let lbIdx = 0, lbArr = [];
+function openLightbox(arr, start=0){
+  lbArr = arr || []; lbIdx = start||0;
+  if(!lbArr.length) return;
+  const box=$('lightbox'), img=$('lightboxImg');
+  img.src = lbArr[lbIdx];
+  box.style.display='flex';
+}
+function closeLightbox(){ $('lightbox').style.display='none'; }
+function navLightbox(dir){
+  if(!lbArr.length) return;
+  lbIdx = (lbIdx + dir + lbArr.length) % lbArr.length;
+  $('lightboxImg').src = lbArr[lbIdx];
+}
+$('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+$('lightbox').querySelector('.close').onclick = closeLightbox;
+$('lightbox').querySelector('.prev').onclick = ()=>navLightbox(-1);
+$('lightbox').querySelector('.next').onclick = ()=>navLightbox(1);
+document.addEventListener('keydown', e=>{
+  const box=$('lightbox'); if(box.style.display!=='flex') return;
+  if(e.key==='Escape') closeLightbox();
+  if(e.key==='ArrowLeft') navLightbox(-1);
+  if(e.key==='ArrowRight') navLightbox(1);
+});
+
 /* ===== Export/Import ===== */
 $('exportBtn').onclick = ()=>{
-  const payload = { version:3, plain:true, db: readDB() };
+  const payload = { version:4, plain:true, db: readDB() };
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
   a.download='daily-journal-export.json'; a.click(); URL.revokeObjectURL(a.href);
@@ -290,13 +328,22 @@ $('importFile').addEventListener('change', async (e)=>{
 /* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', ()=>{
   $('date').value = todayISO();
-  updateWeekday();
-  loadToday();
-  renderTimeline();
-  buildPlaceHistoryOptions();
+  $('weekday').textContent = toWeekday($('date').value);
   $('saveBtn').onclick=saveToday;
   $('loadBtn').onclick=loadToday;
   $('clearBtn').onclick=clearToday;
+
+  // photos input -> preview thumbnails (click to enlarge)
+  $('photosInput').addEventListener('change', async (e)=>{
+    const files=[...e.target.files].slice(0,3);
+    const arr=[];
+    for(const f of files){ arr.push(await resizeImage(f)); }
+    renderPhotos(arr);
+  });
+
+  loadToday();
+  renderTimeline();
+  buildPlaceHistoryOptions();
 });
 </script>
 </body>
