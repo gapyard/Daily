@@ -1,18 +1,14 @@
+
+const CACHE = 'dj-pin-v2';
 self.addEventListener('install', (e)=>{
-  e.waitUntil(caches.open('dj-pin-v1').then(cache=>cache.addAll([
+  e.waitUntil(caches.open(CACHE).then(cache=>cache.addAll([
     './',
-    './index.html',
-    './manifest.webmanifest',
+    './index.html?v2',
+    './manifest.webmanifest?v2',
     './icon-512.png'
   ])));
 });
-
-self.addEventListener('activate', (e)=>{
-  e.waitUntil(self.clients.claim());
-});
-
+self.addEventListener('activate', (e)=>{ e.waitUntil(self.clients.claim()); });
 self.addEventListener('fetch', (e)=>{
-  e.respondWith(
-    caches.match(e.request).then(res=> res || fetch(e.request))
-  );
+  e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
 });
