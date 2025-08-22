@@ -1,262 +1,302 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ไดอารี่ประจำวัน</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",sans-serif;background:#0f172a;color:#e2e8f0}
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e2e8f0;
+      --line:#1f2937; --btn:#1f2937; --primary:#2563eb; --danger:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", sans-serif}
     .container{max-width:900px;margin:0 auto;padding:20px;display:grid;gap:16px}
-    h1{text-align:center;margin:0 0 12px}
-    .card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:16px}
-    label{font-size:13px;color:#94a3b8;display:block;margin:10px 0 6px}
-    input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #374151;background:#0b1220;color:#e2e8f0}
-    textarea{min-height:90px;resize:vertical}
+    h1{margin:0 0 6px 0;text-align:center}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+    label{font-size:13px;color:var(--muted);display:block;margin:10px 0 6px}
+    input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #374151;background:#0b1220;color:var(--text)}
+    textarea{min-height:110px;resize:vertical}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    button{border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
-    .primary{background:#2563eb;color:#fff}
-    .danger{background:#dc2626;color:#fff}
-    .ghost{background:#1f2937;color:#e5e7eb;font-size:12px;padding:4px 8px}
-    /* timeline */
+    .muted{color:var(--muted);font-size:12px}
+    .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .photos img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #374151}
+    .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    button{border:0;border-radius:10px;padding:10px 14px;background:var(--btn);color:var(--text);cursor:pointer}
+    button.primary{background:var(--primary);color:#fff}
+    button.danger{background:var(--danger);color:#fff}
+    /* Timeline */
     #timelineList{display:grid;gap:8px}
-    .timeline-item{display:flex;align-items:center;gap:8px;background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:8px}
-    .timeline-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
-    .thumbs{display:flex;gap:4px}
-    .thumbs img{width:32px;height:32px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #374151}
-    .actions{display:flex;gap:4px}
-    /* lightbox */
-    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
-    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid #334155}
-    .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:22px;background:#1f2937;color:#e5e7f0;border:1px solid #334155;border-radius:8px;padding:6px 10px;cursor:pointer}
-    .prev{left:14px} .next{right:14px}
-    .close{top:14px;right:14px;transform:none}
+    .rowline{
+      border:1px solid var(--line);border-radius:12px;background:#0b1220;padding:10px;display:grid;gap:6px
+    }
+    .rowline-head{display:flex;align-items:center;gap:10px}
+    .badge{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 8px;font-size:12px}
+    .rowline-actions{margin-left:auto;display:flex;gap:6px}
+    .btn-ghost{background:#1f2937; color:#e5e7eb; padding:6px 8px; border-radius:8px; font-size:12px}
+    .inline-muted{color:var(--muted);font-size:13px}
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>📖 ไดอารี่</h1>
+  <div class="container">
+    <h1>📖 ไดอารี่ประจำวัน</h1>
 
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>วันที่</label>
-        <input type="date" id="date">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="date">วันที่</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label>วันในสัปดาห์</label>
+          <div id="weekday" class="badge">—</div>
+        </div>
       </div>
+
+      <div class="row">
+        <div>
+          <label for="place">วันนี้ไปไหนดี (เลือกจากประวัติได้)</label>
+          <input id="place" type="text" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off" />
+          <datalist id="placeList"></datalist>
+          <div class="muted">คลิก/พิมพ์ เพื่อเลือกจากประวัติสถานที่ที่เคยไป</div>
+        </div>
+        <div>
+          <label for="place_note">โน้ตสถานที่ (ไปทำอะไร)</label>
+          <input id="place_note" type="text" placeholder="เช่น เดินเล่น / ส่งของ / เจอลูกค้า" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="food">วันนี้กินอะไร</label>
+          <input id="food" type="text" placeholder="เช่น ข้าวหมูกรอบ ชานม" />
+        </div>
+        <div></div>
+      </div>
+
       <div>
-        <label>วันในสัปดาห์</label>
-        <div id="weekday" style="margin-top:10px;font-size:13px;color:#94a3b8">—</div>
+        <label for="notes">โน้ตประจำวัน</label>
+        <textarea id="notes" placeholder="พิมพ์บันทึก..."></textarea>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="photosInput">แนบรูป (สูงสุด 3)</label>
+          <input id="photosInput" type="file" accept="image/*" multiple />
+          <div class="muted">รูปจะถูกย่ออัตโนมัติ เพื่อประหยัดพื้นที่</div>
+          <div id="photosPreview" class="photos"></div>
+        </div>
+        <div>
+          <label>การทำงาน</label>
+          <div class="buttons">
+            <button class="primary" id="saveBtn">บันทึก</button>
+            <button id="loadBtn">โหลด</button>
+            <button class="danger" id="clearBtn">ลบข้อมูลวันนี้</button>
+          </div>
+          <div class="buttons">
+            <button id="exportBtn">ส่งออก JSON</button>
+            <button id="importBtn">นำเข้า JSON</button>
+            <input id="importFile" type="file" accept="application/json" style="display:none" />
+          </div>
+        </div>
       </div>
     </div>
-    <div class="row">
-      <div>
-        <label>สถานที่</label>
-        <input id="place" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off">
-        <datalist id="placeList"></datalist>
-      </div>
-      <div>
-        <label>โน้ตสถานที่</label>
-        <input id="place_note" placeholder="ไปทำอะไร เช่น เดินเล่น / ส่งของ / เจอลูกค้า">
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label>กินอะไร</label>
-        <input id="food" placeholder="เช่น ข้าวหมูกรอบ ชานม">
-      </div>
-      <div></div>
-    </div>
-    <div>
-      <label>โน้ตประจำวัน</label>
-      <textarea id="notes" placeholder="เขียนโน้ตได้หลายบรรทัด..."></textarea>
-    </div>
-    <div>
-      <label>แนบรูป (สูงสุด 3)</label>
-      <input type="file" id="photosInput" accept="image/*" multiple>
-      <div id="photosPreview" class="thumbs" style="margin-top:6px"></div>
-    </div>
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="primary" id="saveBtn">บันทึก</button>
-      <button id="loadBtn">โหลด</button>
-      <button class="danger" id="clearBtn">ลบข้อมูลวันนี้</button>
+
+    <!-- Timeline -->
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;font-size:16px">บันทึกย้อนหลัง</h3>
+      <div id="timelineList"></div>
     </div>
   </div>
-
-  <div class="card">
-    <h3 style="margin:0 0 8px;font-size:15px">บันทึกย้อนหลัง</h3>
-    <div id="timelineList"></div>
-  </div>
-</div>
-
-<!-- Lightbox -->
-<div id="lightbox" class="lightbox" onclick="if(event.target.id==='lightbox') closeLB()">
-  <button class="nav prev" onclick="navLB(-1)">&lt;</button>
-  <img id="lightboxImg" src="">
-  <button class="nav next" onclick="navLB(1)">&gt;</button>
-  <button class="nav close" onclick="closeLB()">ปิด</button>
-</div>
 
 <script>
-/* ===== 0) Auto-migrate localStorage (diary -> dj_db + normalize dates) ===== */
-(function migrateLocal(){
-  try {
-    // 0.1 copy diary -> dj_db if dj_db missing
-    if (!localStorage.getItem('dj_db') && localStorage.getItem('diary')) {
-      localStorage.setItem('dj_db', localStorage.getItem('diary'));
-    }
-    // 0.2 normalize date keys to YYYY-MM-DD
-    const raw = localStorage.getItem('dj_db');
-    if (raw) {
-      const inDb = JSON.parse(raw), outDb = {};
-      for (const k in inDb) {
-        let d = k;
-        if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(k)) {
-          const [a,b,c] = k.split('/');
-          d = (a.length===4) ? `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}` : `${c}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
-        }
-        outDb[d] = inDb[k];
-      }
-      localStorage.setItem('dj_db', JSON.stringify(outDb));
-    }
-  } catch (e) {}
-})();
+/* ===== Config ===== */
+const CLEAR_AFTER_SAVE = true; // เปลี่ยนเป็น false ถ้าไม่อยากให้เคลียร์ฟอร์มหลังบันทึก
 
-/* ===== 1) Helpers & DB ===== */
-const $ = id => document.getElementById(id);
-const WEEK = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
-const todayISO = () => new Date().toISOString().slice(0,10);
+/* ===== Helpers & DB ===== */
+const $ = (id)=>document.getElementById(id);
+const WEEKDAYS = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+function toWeekday(iso){ const d=new Date(iso); return isNaN(d)?"—":WEEKDAYS[d.getDay()]; }
 
-const readDB  = () => { try{ return JSON.parse(localStorage.getItem('dj_db')||'{}'); }catch{return {}} };
-const writeDB = (d) => localStorage.setItem('dj_db', JSON.stringify(d));
+function readDB(){ try{ const raw=localStorage.getItem('dj_db'); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
+function writeDB(db){ localStorage.setItem('dj_db', JSON.stringify(db)); }
 
-function updateWeekday(){
-  const d = new Date($('date').value);
-  $('weekday').textContent = isNaN(d) ? '—' : WEEK[d.getDay()];
-}
-
-/* ===== 2) Images ===== */
-function resize(file, maxW=1280, quality=0.85){
+/* ===== Image handling ===== */
+function resizeImage(file, maxW=1280, quality=0.85){
   return new Promise(resolve=>{
-    const fr=new FileReader();
-    fr.onload=e=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
       const img=new Image();
       img.onload=()=>{
-        let w=img.width,h=img.height;
+        let w=img.width, h=img.height;
         if(w>maxW){ h=Math.round(h*(maxW/w)); w=maxW; }
-        const c=document.createElement('canvas'); c.width=w; c.height=h;
-        c.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(c.toDataURL('image/jpeg',quality));
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.src=e.target.result;
     };
-    fr.readAsDataURL(file);
-  });
-}
-function previewPhotos(arr){
-  const box = $('photosPreview'); box.innerHTML = '';
-  (arr||[]).forEach((src,i)=>{
-    const im = new Image(); im.src = src; im.onclick = ()=>openLB(arr,i);
-    box.appendChild(im);
+    reader.readAsDataURL(file);
   });
 }
 
-/* ===== 3) Place history ===== */
-function refreshPlaceHistory(){
-  const db = readDB();
+/* ===== UI Bindings ===== */
+function updateWeekday(){ $('weekday').textContent = toWeekday($('date').value); }
+$('date').addEventListener('change', updateWeekday);
+
+function renderPhotos(arr){
+  const wrap=$('photosPreview'); wrap.innerHTML='';
+  (arr||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; wrap.appendChild(img); });
+}
+
+/* ===== Place History (datalist) ===== */
+function buildPlaceHistoryOptions(){
+  const db=readDB();
   const vals = Object.values(db).map(e=>e?.place?.trim()).filter(Boolean);
-  const freq = {}; vals.forEach(v=>freq[v]=(freq[v]||0)+1);
-  const uniq = [...new Set(vals)].sort((a,b)=>(freq[b]||0)-(freq[a]||0) || a.localeCompare(b));
-  const dl = $('placeList'); dl.innerHTML = '';
-  uniq.slice(0,100).forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
+  const freq={}; vals.forEach(v=>freq[v]=(freq[v]||0)+1);
+  const uniq=[...new Set(vals)];
+  uniq.sort((a,b)=>(freq[b]||0)-(freq[a]||0) || a.localeCompare(b));
+  const dl=$('placeList'); dl.innerHTML='';
+  uniq.slice(0,100).forEach(txt=>{
+    const opt=document.createElement('option'); opt.value=txt; dl.appendChild(opt);
+  });
 }
 
-/* ===== 4) CRUD ===== */
+/* ===== Save / Load / Clear ===== */
 async function saveToday(){
-  const d = readDB();
-  const key = $('date').value || todayISO();
-  const files = [...$('photosInput').files].slice(0,3);
-  let photos = [];
-  if(files.length){ for(const f of files) photos.push(await resize(f)); }
-  else if (d[key]?.photos) { photos = d[key].photos; }
+  const db=readDB();
+  const d=$('date').value || todayISO();
+  const place=$('place').value.trim();
+  const place_note=$('place_note').value.trim();
+  const food=$('food').value.trim();
+  const notes=$('notes').value.trim();
 
-  d[key] = {
-    place: $('place').value.trim(),
-    place_note: $('place_note').value.trim(),
-    food: $('food').value.trim(),
-    notes: $('notes').value.trim(),
-    photos
-  };
-  writeDB(d);
+  // photos: ถ้ามีไฟล์ใหม่ -> ย่อแล้วบันทึก, ถ้าไม่มี -> เก็บของเดิมไว้
+  let photos=[];
+  const files=[...$('photosInput').files].slice(0,3);
+  if(files.length){
+    for(const f of files){ photos.push(await resizeImage(f)); }
+  }else if(readDB()[d]?.photos){ photos = readDB()[d].photos; }
+
+  db[d] = { place, place_note, food, notes, photos };
+  writeDB(db);
+
+  // อัปเดตรายการ & ประวัติสถานที่
   renderTimeline();
-  refreshPlaceHistory();
+  buildPlaceHistoryOptions();
+
+  if (CLEAR_AFTER_SAVE) {
+    // เคลียร์เฉพาะฟอร์ม (ไม่ยุ่งกับวันที่)
+    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
+    $('photosInput').value=''; renderPhotos([]);
+  } else {
+    // โหลดข้อมูลที่เพิ่งบันทึกกลับขึ้นฟอร์ม (คงค่าไว้)
+    loadToday();
+  }
   alert('บันทึกแล้ว ✓');
 }
 
 function loadToday(){
-  const d = readDB();
-  const key = $('date').value || todayISO();
-  const e = d[key] || {};
-  $('place').value = e.place || '';
-  $('place_note').value = e.place_note || '';
-  $('food').value = e.food || '';
-  $('notes').value = e.notes || '';
-  previewPhotos(e.photos || []);
+  const db=readDB();
+  const d=$('date').value || todayISO();
+  const e=db[d]||{};
+  $('place').value=e.place||'';
+  $('place_note').value=e.place_note||'';
+  $('food').value=e.food||'';
+  $('notes').value=e.notes||'';
+  renderPhotos(e.photos||[]);
 }
 
 function clearToday(){
-  const d = readDB();
-  const key = $('date').value || todayISO();
-  if(!d[key]) return alert('ยังไม่มีข้อมูลวันนี้');
-  if(!confirm('ลบข้อมูลของวันนี้หรือไม่?')) return;
-  delete d[key]; writeDB(d);
-  $('place').value = $('place_note').value = $('food').value = $('notes').value = '';
-  $('photosInput').value = ''; previewPhotos([]);
-  renderTimeline(); refreshPlaceHistory();
+  const d=$('date').value || todayISO();
+  const db=readDB();
+  if(!db[d]){ alert('ยังไม่มีข้อมูลวันนี้'); return; }
+  if(confirm('ลบข้อมูลของวันนี้หรือไม่?')){
+    delete db[d]; writeDB(db);
+    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
+    $('photosInput').value=''; renderPhotos([]);
+    renderTimeline(); buildPlaceHistoryOptions();
+  }
 }
 
-/* ===== 5) Timeline (one-line + thumbnails + small actions right) ===== */
-function oneLine(it){
-  const w = WEEK[new Date(it.date).getDay()];
-  const parts = [w, it.date, it.place||'', it.place_note||'', it.food||'', (it.notes||'').replace(/\s+/g,' ').trim()];
-  return parts.filter(Boolean).join(' ');
-}
+/* ===== Timeline (latest first) ===== */
 function renderTimeline(){
-  const list = $('timelineList'); list.innerHTML = '';
-  const d = readDB();
-  const arr = Object.entries(d).map(([date,e])=>({date, ...e})).sort((a,b)=>b.date.localeCompare(a.date));
-  if(!arr.length){ list.innerHTML = '<div style="color:#94a3b8">ยังไม่มีบันทึก</div>'; return; }
+  const list=$('timelineList');
+  const db=readDB();
+  const arr=Object.entries(db).map(([date,e])=>({date,...e}));
+  arr.sort((a,b)=> b.date.localeCompare(a.date)); // ล่าสุดอยู่บน
 
+  if(!arr.length){ list.innerHTML='<div class="muted">ยังไม่มีบันทึก</div>'; return; }
+  list.innerHTML='';
   arr.forEach(it=>{
-    const row = document.createElement('div'); row.className = 'timeline-item';
-    const text = document.createElement('div'); text.className = 'timeline-text'; text.textContent = oneLine(it);
-    const thumbs = document.createElement('div'); thumbs.className = 'thumbs';
-    (it.photos||[]).forEach((src,i)=>{ const im=new Image(); im.src=src; im.onclick=()=>openLB(it.photos,i); thumbs.appendChild(im);});
-    const act = document.createElement('div'); act.className = 'actions';
-    const edit = document.createElement('button'); edit.className='ghost'; edit.textContent='แก้'; edit.onclick=()=>{$('date').value=it.date;updateWeekday();loadToday();scrollTo({top:0,behavior:'smooth'});};
-    const del = document.createElement('button'); del.className='ghost'; del.textContent='ลบ'; del.onclick=()=>{const d2=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete d2[it.date]; writeDB(d2); renderTimeline(); refreshPlaceHistory(); }};
-    act.appendChild(edit); act.appendChild(del);
-    row.appendChild(text); if((it.photos||[]).length) row.appendChild(thumbs); row.appendChild(act);
+    const row=document.createElement('div');
+    row.className='rowline';
+
+    const head=document.createElement('div');
+    head.className='rowline-head';
+    head.innerHTML=`<strong>${it.date}</strong><span class="badge">${toWeekday(it.date)}</span>`;
+
+    const actions=document.createElement('div');
+    actions.className='rowline-actions';
+    const view=document.createElement('button'); view.className='btn-ghost'; view.textContent='เปิดดู/แก้';
+    view.onclick=()=>{ $('date').value=it.date; updateWeekday(); loadToday(); window.scrollTo({top:0,behavior:'smooth'}); };
+    const del=document.createElement('button'); del.className='btn-ghost'; del.textContent='ลบ';
+    del.onclick=()=>{ const db=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete db[it.date]; writeDB(db); renderTimeline(); buildPlaceHistoryOptions(); } };
+    actions.appendChild(view); actions.appendChild(del);
+    head.appendChild(actions);
+
+    const line=document.createElement('div');
+    line.className='inline-muted';
+    const parts=[];
+    if(it.place) parts.push(`📍 ${it.place}`);
+    if(it.place_note) parts.push(`📝 ${it.place_note}`);
+    if(it.food) parts.push(`🍚 ${it.food}`);
+    line.textContent=parts.join('   •   ');
+
+    const notes=document.createElement('div');
+    if(it.notes){ notes.textContent=it.notes; notes.style.whiteSpace='pre-wrap'; }
+
+    const pics=document.createElement('div'); pics.className='photos';
+    (it.photos||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; pics.appendChild(img); });
+
+    row.appendChild(head);
+    if(parts.length) row.appendChild(line);
+    if(it.notes) row.appendChild(notes);
+    if((it.photos||[]).length) row.appendChild(pics);
     list.appendChild(row);
   });
 }
 
-/* ===== 6) Lightbox ===== */
-let LB_ARR = [], LB_IDX = 0;
-function openLB(arr, i){ LB_ARR = arr||[]; LB_IDX = i||0; if(!LB_ARR.length) return; $('lightboxImg').src = LB_ARR[LB_IDX]; $('lightbox').style.display='flex'; }
-function closeLB(){ $('lightbox').style.display='none'; }
-function navLB(dir){ if(!LB_ARR.length) return; LB_IDX = (LB_IDX + dir + LB_ARR.length) % LB_ARR.length; $('lightboxImg').src = LB_ARR[LB_IDX]; }
-document.addEventListener('keydown', e=>{ if($('lightbox').style.display==='flex'){ if(e.key==='Escape') closeLB(); if(e.key==='ArrowLeft') navLB(-1); if(e.key==='ArrowRight') navLB(1); }});
+/* ===== Export/Import ===== */
+$('exportBtn').onclick = ()=>{
+  const payload = { version:3, plain:true, db: readDB() };
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.download='daily-journal-export.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+$('importBtn').onclick = ()=> $('importFile').click();
+$('importFile').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  try{
+    const text=await file.text(); const payload=JSON.parse(text);
+    const db = payload?.db && typeof payload.db==='object' ? payload.db : payload;
+    if(db && typeof db==='object'){ writeDB(db); loadToday(); renderTimeline(); buildPlaceHistoryOptions(); alert('นำเข้าสำเร็จ ✓'); }
+    else alert('ไฟล์ไม่ถูกต้อง');
+  }catch{ alert('อ่านไฟล์ไม่ได้'); }
+});
 
-/* ===== 7) Boot ===== */
+/* ===== Boot ===== */
 document.addEventListener('DOMContentLoaded', ()=>{
   $('date').value = todayISO();
   updateWeekday();
-  $('date').onchange = updateWeekday;
-  $('saveBtn').onclick = saveToday;
-  $('loadBtn').onclick = loadToday;
-  $('clearBtn').onclick = clearToday;
-  $('photosInput').onchange = async e=>{ const arr=[]; for(const f of [...e.target.files].slice(0,3)) arr.push(await resize(f)); previewPhotos(arr); };
+  loadToday();
   renderTimeline();
-  refreshPlaceHistory();
+  buildPlaceHistoryOptions();
+  $('saveBtn').onclick=saveToday;
+  $('loadBtn').onclick=loadToday;
+  $('clearBtn').onclick=clearToday;
 });
 </script>
 </body>
