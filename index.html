@@ -13,6 +13,8 @@
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",sans-serif}
   .wrap{max-width:980px;margin:0 auto;padding:20px;display:grid;gap:16px}
   h1{margin:0 0 8px;text-align:center}
+
+  /* form */
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
   label{font-size:12px;color:var(--muted);display:block;margin:8px 0 6px}
   input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #374151;background:var(--input);color:var(--text)}
@@ -22,17 +24,20 @@
   .btn{border:0;border-radius:9px;padding:9px 12px;background:var(--btn);color:var(--text);cursor:pointer}
   .btn.primary{background:var(--primary)}
   .btn.danger{background:var(--danger)}
-  .btn.ghost{background:#1f2937;color:#e5e7eb;font-size:12px;padding:6px 8px}
   .controls{display:flex;gap:8px;flex-wrap:wrap}
-  /* timeline */
+  .weekday-pill{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 10px;font-size:12px;display:inline-block;margin-top:8px}
+
+  /* timeline (3 blocks row) */
   #timeline{display:grid;gap:8px}
-  .item{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px}
-  .left{flex:1;min-width:0}
-  .title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
-  .weekday{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 8px;font-size:12px}
-  .line{color:var(--text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .tl-row{display:flex;align-items:center;gap:10px;background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:10px}
+  .wk-badge{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 10px;font-size:12px;white-space:nowrap}
+  .date-chip{background:#0f172a;border:1px solid #1f2937;border-radius:6px;padding:4px 10px;font-weight:700;white-space:nowrap}
+  .tl-detail{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
   .thumbs{display:flex;gap:4px;margin-left:6px}
   .thumbs img{width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid #374151;cursor:pointer}
+  .tl-actions{display:flex;gap:6px;margin-left:8px}
+  .btn-ghost{background:#1f2937;color:#e5e7eb;padding:6px 8px;border-radius:8px;font-size:12px;border:0;cursor:pointer}
+
   /* lightbox */
   .lb{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
   .lb img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid #334155}
@@ -53,13 +58,13 @@
       </div>
       <div>
         <label>วันในสัปดาห์</label>
-        <div id="weekday" class="weekday" style="display:inline-block;margin-top:8px">—</div>
+        <div id="weekday" class="weekday-pill">—</div>
       </div>
     </div>
 
     <div class="row">
       <div>
-        <label for="place">สถานที่ (กดเพื่อเลือกจากประวัติ)</label>
+        <label for="place">สถานที่ (เลือกจากประวัติได้)</label>
         <input id="place" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off" />
         <datalist id="placeList"></datalist>
       </div>
@@ -113,7 +118,7 @@
 </div>
 
 <script>
-/* === migrate diary -> dj_db & normalize dates === */
+/* === 0) migrate diary -> dj_db & normalize dates === */
 (function migrate(){
   try{
     if(!localStorage.getItem('dj_db') && localStorage.getItem('diary')){
@@ -134,7 +139,7 @@
   }catch(e){}
 })();
 
-/* === helpers & db === */
+/* === 1) helpers & db === */
 const $ = id => document.getElementById(id);
 const WEEK = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
 const todayISO = () => new Date().toISOString().slice(0,10);
@@ -143,7 +148,7 @@ const writeDB = (d) => localStorage.setItem('dj_db', JSON.stringify(d));
 
 function updateWeekday(){ const d=new Date($('date').value); $('weekday').textContent = isNaN(d)?'—':WEEK[d.getDay()]; }
 
-/* === images === */
+/* === 2) images === */
 function resize(file, maxW=1280, q=.85){
   return new Promise(resolve=>{
     const fr=new FileReader();
@@ -160,7 +165,7 @@ function resize(file, maxW=1280, q=.85){
   });
 }
 
-/* === CRUD === */
+/* === 3) CRUD === */
 async function saveToday(){
   const d = readDB(); const key = $('date').value || todayISO();
   let photos = d[key]?.photos || [];
@@ -191,7 +196,7 @@ function clearToday(){
   $('photos').value='';
 }
 
-/* === place history (datalist) === */
+/* === 4) place history (datalist) === */
 function buildPlaceHistory(){
   const db = readDB();
   const vals = Object.values(db).map(e=>e?.place?.trim()).filter(Boolean);
@@ -201,7 +206,7 @@ function buildPlaceHistory(){
   uniq.slice(0,120).forEach(v=>{ const o=document.createElement('option'); o.value=v; dl.appendChild(o); });
 }
 
-/* === timeline (single line with emojis) === */
+/* === 5) timeline (3 blocks + thumbnails + actions) === */
 function renderTimeline(){
   const box=$('timeline'); box.innerHTML='';
   const d=readDB();
@@ -209,45 +214,55 @@ function renderTimeline(){
   if(!arr.length){ box.innerHTML='<div style="color:#94a3b8">ยังไม่มีบันทึก</div>'; return; }
 
   arr.forEach(it=>{
-    const row=document.createElement('div'); row.className='item';
+    const row=document.createElement('div'); row.className='tl-row';
 
-    const left=document.createElement('div'); left.className='left';
-    const head=document.createElement('div'); head.className='title';
-    head.innerHTML = `<span>${it.date}</span><span class="weekday">${WEEK[new Date(it.date).getDay()]}</span>`;
-    const line=document.createElement('div'); line.className='line';
-    line.textContent = [
-      it.place?`📍 ${it.place}`:'',
-      it.place_note?`📝 ${it.place_note}`:'',
-      it.food?`🍚 ${it.food}`:'',
-      it.notes?`🗒 ${it.notes.replace(/\s+/g,' ').trim()}`:''
+    // [ วัน ]
+    const wk=document.createElement('span'); wk.className='wk-badge';
+    wk.textContent = WEEK[new Date(it.date).getDay()];
+
+    // [ วันที่ ]
+    const dateChip=document.createElement('span'); dateChip.className='date-chip'; dateChip.textContent=it.date;
+
+    // รายละเอียด (emoji) บรรทัดเดียว
+    const detail=document.createElement('div'); detail.className='tl-detail';
+    detail.textContent=[
+      it.place      ? `📍 ${it.place}`      : '',
+      it.place_note ? `📝 ${it.place_note}` : '',
+      it.food       ? `🍚 ${it.food}`       : '',
+      it.notes      ? `🗒 ${String(it.notes).replace(/\s+/g,' ').trim()}` : ''
     ].filter(Boolean).join('   ');
-    left.appendChild(head); if(line.textContent) left.appendChild(line);
 
+    // thumbnails (ถ้ามี)
     const thumbs=document.createElement('div'); thumbs.className='thumbs';
-    (it.photos||[]).forEach((src,i)=>{ const im=new Image(); im.src=src; im.onclick=()=>openLB(it.photos,i); thumbs.appendChild(im); });
+    (it.photos||[]).forEach((src,i)=>{ const im=new Image(); im.src=src; im.alt='photo'; im.onclick=()=>openLB(it.photos,i); thumbs.appendChild(im); });
 
-    const act=document.createElement('div'); act.style.display='flex'; act.style.gap='6px';
-    const b1=document.createElement('button'); b1.className='btn ghost'; b1.textContent='แก้';
-    b1.onclick=()=>{$('date').value=it.date;updateWeekday();loadToday();scrollTo({top:0,behavior:'smooth'});};
-    const b2=document.createElement('button'); b2.className='btn ghost'; b2.textContent='ลบ';
-    b2.onclick=()=>{ const d2=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete d2[it.date]; writeDB(d2); renderTimeline(); buildPlaceHistory(); } };
-    act.appendChild(b1); act.appendChild(b2);
+    // ปุ่มแก้/ลบ ขวาสุด
+    const actions=document.createElement('div'); actions.className='tl-actions';
+    const edit=document.createElement('button'); edit.className='btn-ghost'; edit.textContent='แก้';
+    edit.onclick=()=>{ $('date').value=it.date; updateWeekday(); loadToday(); window.scrollTo({top:0,behavior:'smooth'}); };
+    const del=document.createElement('button'); del.className='btn-ghost'; del.textContent='ลบ';
+    del.onclick=()=>{ const d2=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete d2[it.date]; writeDB(d2); renderTimeline(); buildPlaceHistory(); } };
+    actions.appendChild(edit); actions.appendChild(del);
 
-    row.appendChild(left);
+    // เรียงตามที่ขอ: [วัน] [วันที่] [รายละเอียด] [thumbnail] [ปุ่ม]
+    row.appendChild(wk);
+    row.appendChild(dateChip);
+    row.appendChild(detail);
     if((it.photos||[]).length) row.appendChild(thumbs);
-    row.appendChild(act);
+    row.appendChild(actions);
+
     box.appendChild(row);
   });
 }
 
-/* === lightbox === */
+/* === 6) lightbox === */
 let LB_ARR=[], LB_IDX=0;
 function openLB(arr, i){ LB_ARR=arr||[]; LB_IDX=i||0; if(!LB_ARR.length) return; $('lbImg').src=LB_ARR[LB_IDX]; $('lb').style.display='flex'; }
 function closeLB(){ $('lb').style.display='none'; }
 function navLB(dir){ if(!LB_ARR.length) return; LB_IDX=(LB_IDX+dir+LB_ARR.length)%LB_ARR.length; $('lbImg').src=LB_ARR[LB_IDX]; }
 document.addEventListener('keydown', e=>{ if($('lb').style.display==='flex'){ if(e.key==='Escape') closeLB(); if(e.key==='ArrowLeft') navLB(-1); if(e.key==='ArrowRight') navLB(1); }});
 
-/* === boot === */
+/* === 7) boot === */
 document.addEventListener('DOMContentLoaded', ()=>{
   $('date').value = todayISO();
   updateWeekday();
