@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ไดอารี่ประจำวัน</title>
   <style>
-    body{margin:0;font-family:sans-serif;background:#0f172a;color:#e2e8f0}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",sans-serif;background:#0f172a;color:#e2e8f0}
     .container{max-width:900px;margin:0 auto;padding:20px;display:grid;gap:16px}
     h1{text-align:center;margin:0 0 12px}
     .card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:16px}
     label{font-size:13px;color:#94a3b8;display:block;margin:10px 0 6px}
     input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #374151;background:#0b1220;color:#e2e8f0}
-    textarea{min-height:80px;resize:vertical}
+    textarea{min-height:90px;resize:vertical}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     button{border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
     .primary{background:#2563eb;color:#fff}
@@ -26,7 +26,10 @@
     .actions{display:flex;gap:4px}
     /* lightbox */
     .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
-    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px}
+    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid #334155}
+    .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:22px;background:#1f2937;color:#e5e7f0;border:1px solid #334155;border-radius:8px;padding:6px 10px;cursor:pointer}
+    .prev{left:14px} .next{right:14px}
+    .close{top:14px;right:14px;transform:none}
   </style>
 </head>
 <body>
@@ -47,24 +50,24 @@
     <div class="row">
       <div>
         <label>สถานที่</label>
-        <input id="place" list="placeList">
+        <input id="place" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off">
         <datalist id="placeList"></datalist>
       </div>
       <div>
         <label>โน้ตสถานที่</label>
-        <input id="place_note">
+        <input id="place_note" placeholder="ไปทำอะไร เช่น เดินเล่น / ส่งของ / เจอลูกค้า">
       </div>
     </div>
     <div class="row">
       <div>
         <label>กินอะไร</label>
-        <input id="food">
+        <input id="food" placeholder="เช่น ข้าวหมูกรอบ ชานม">
       </div>
       <div></div>
     </div>
     <div>
       <label>โน้ตประจำวัน</label>
-      <textarea id="notes"></textarea>
+      <textarea id="notes" placeholder="เขียนโน้ตได้หลายบรรทัด..."></textarea>
     </div>
     <div>
       <label>แนบรูป (สูงสุด 3)</label>
@@ -84,17 +87,9 @@
   </div>
 </div>
 
-<div id="lightbox" class="lightbox" onclick="this.style.display='none'">
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="if(event.target.id==='lightbox') closeLB()">
+  <button class="nav prev" onclick="navLB(-1)">&lt;</button>
   <img id="lightboxImg" src="">
-</div>
-
-<script>
-const $=id=>document.getElementById(id);
-const WEEK=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
-const today=()=>new Date().toISOString().slice(0,10);
-const db=()=>JSON.parse(localStorage.getItem("diary")||"{}");
-function saveDB(d){localStorage.setItem("diary",JSON.stringify(d));}
-
-function updateWeekday(){const d=new Date($("date").value);$("weekday").textContent=isNaN(d)?"—":WEEK[d.getDay()];}
-
-async function resize(file){return new Promise(r=>{const fr
+  <button class="nav next" onclick="navLB(1)">&gt;</button>
+  <button class="nav close" onclick="closeLB()">ปิด</but
