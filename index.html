@@ -1,350 +1,100 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ไดอารี่ประจำวัน</title>
-  <link rel="manifest" href="manifest.webmanifest">
   <style>
-    :root{
-      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e2e8f0;
-      --line:#1f2937; --btn:#1f2937; --primary:#2563eb; --danger:#dc2626;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", sans-serif}
+    body{margin:0;font-family:sans-serif;background:#0f172a;color:#e2e8f0}
     .container{max-width:900px;margin:0 auto;padding:20px;display:grid;gap:16px}
-    h1{margin:0 0 6px 0;text-align:center}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-    label{font-size:13px;color:var(--muted);display:block;margin:10px 0 6px}
-    input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #374151;background:#0b1220;color:var(--text)}
-    textarea{min-height:110px;resize:vertical}
+    h1{text-align:center;margin:0 0 12px}
+    .card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:16px}
+    label{font-size:13px;color:#94a3b8;display:block;margin:10px 0 6px}
+    input,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #374151;background:#0b1220;color:#e2e8f0}
+    textarea{min-height:80px;resize:vertical}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .muted{color:var(--muted);font-size:12px}
-    .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .photos img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #374151;cursor:pointer}
-    .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    button{border:0;border-radius:10px;padding:10px 14px;background:var(--btn);color:var(--text);cursor:pointer}
-    button.primary{background:var(--primary);color:#fff}
-    button.danger{background:var(--danger);color:#fff}
-    /* Timeline (one line per record) */
-    #timelineList{display:grid;gap:6px}
-    .rowline{
-      border:1px solid var(--line);border-radius:10px;background:#0b1220;padding:8px 10px;
-      display:flex;align-items:center;gap:10px;min-height:42px
-    }
-    .rowline-text{
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; font-size:14px
-    }
-    .rowline-actions{display:flex;gap:6px;margin-left:8px}
-    .btn-ghost{background:#1f2937; color:#e5e7eb; padding:6px 8px; border-radius:8px; font-size:12px}
-    .thumbs-line{display:flex;gap:6px;margin-left:10px}
-    .thumbs-line img{width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid #374151;cursor:pointer}
-    /* Lightbox */
-    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100}
-    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid #334155}
-    .lightbox .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;color:#e2e8f0;background:#1f2937;border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer;user-select:none}
-    .lightbox .prev{left:14px} .lightbox .next{right:14px}
-    .lightbox .close{position:absolute;top:14px;right:14px;font-size:20px;background:#dc2626}
+    button{border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+    .primary{background:#2563eb;color:#fff}
+    .danger{background:#dc2626;color:#fff}
+    .ghost{background:#1f2937;color:#e5e7eb;font-size:12px;padding:4px 8px}
+    /* timeline */
+    #timelineList{display:grid;gap:8px}
+    .timeline-item{display:flex;align-items:center;gap:8px;background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:8px}
+    .timeline-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+    .thumbs{display:flex;gap:4px}
+    .thumbs img{width:32px;height:32px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #374151}
+    .actions{display:flex;gap:4px}
+    /* lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
+    .lightbox img{max-width:92vw;max-height:92vh;border-radius:10px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📖 ไดอารี่ประจำวัน</h1>
+<div class="container">
+  <h1>📖 ไดอารี่</h1>
 
-    <div class="card">
-      <div class="row">
-        <div>
-          <label for="date">วันที่</label>
-          <input id="date" type="date" />
-        </div>
-        <div>
-          <label>วันในสัปดาห์</label>
-          <div id="weekday" style="margin-top:12px;background:#1f2937;color:#9ca3af;border-radius:999px;display:inline-block;padding:2px 8px;font-size:12px">—</div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="place">วันนี้ไปไหนดี (เลือกจากประวัติได้)</label>
-          <input id="place" type="text" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off" />
-          <datalist id="placeList"></datalist>
-          <div class="muted">คลิก/พิมพ์ เพื่อเลือกจากประวัติสถานที่ที่เคยไป</div>
-        </div>
-        <div>
-          <label for="place_note">โน้ตสถานที่ (ไปทำอะไร)</label>
-          <input id="place_note" type="text" placeholder="เช่น เดินเล่น / ส่งของ / เจอลูกค้า" />
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label for="food">วันนี้กินอะไร</label>
-          <input id="food" type="text" placeholder="เช่น ข้าวหมูกรอบ ชานม" />
-        </div>
-        <div></div>
-      </div>
-
+  <div class="card">
+    <div class="row">
       <div>
-        <label for="notes">โน้ตประจำวัน</label>
-        <textarea id="notes" placeholder="พิมพ์บันทึก..."></textarea>
+        <label>วันที่</label>
+        <input type="date" id="date">
       </div>
-
-      <div class="row">
-        <div>
-          <label for="photosInput">แนบรูป (สูงสุด 3)</label>
-          <input id="photosInput" type="file" accept="image/*" multiple />
-          <div class="muted">รูปจะถูกย่ออัตโนมัติ เพื่อประหยัดพื้นที่</div>
-          <div id="photosPreview" class="photos"></div>
-        </div>
-        <div>
-          <label>การทำงาน</label>
-          <div class="buttons">
-            <button class="primary" id="saveBtn">บันทึก</button>
-            <button id="loadBtn">โหลด</button>
-            <button class="danger" id="clearBtn">ลบข้อมูลวันนี้</button>
-          </div>
-          <div class="buttons">
-            <button id="exportBtn">ส่งออก JSON</button>
-            <button id="importBtn">นำเข้า JSON</button>
-            <input id="importFile" type="file" accept="application/json" style="display:none" />
-          </div>
-        </div>
+      <div>
+        <label>วันในสัปดาห์</label>
+        <div id="weekday" style="margin-top:10px;font-size:13px;color:#94a3b8">—</div>
       </div>
     </div>
-
-    <!-- Timeline -->
-    <div class="card">
-      <h3 style="margin:0 0 10px 0;font-size:16px">บันทึกย้อนหลัง</h3>
-      <div id="timelineList"></div>
+    <div class="row">
+      <div>
+        <label>สถานที่</label>
+        <input id="place" list="placeList">
+        <datalist id="placeList"></datalist>
+      </div>
+      <div>
+        <label>โน้ตสถานที่</label>
+        <input id="place_note">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>กินอะไร</label>
+        <input id="food">
+      </div>
+      <div></div>
+    </div>
+    <div>
+      <label>โน้ตประจำวัน</label>
+      <textarea id="notes"></textarea>
+    </div>
+    <div>
+      <label>แนบรูป (สูงสุด 3)</label>
+      <input type="file" id="photosInput" accept="image/*" multiple>
+      <div id="photosPreview" class="thumbs" style="margin-top:6px"></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="primary" id="saveBtn">บันทึก</button>
+      <button id="loadBtn">โหลด</button>
+      <button class="danger" id="clearBtn">ลบข้อมูลวันนี้</button>
     </div>
   </div>
 
-  <!-- Lightbox -->
-  <div id="lightbox" class="lightbox">
-    <button class="nav prev">&lt;</button>
-    <img id="lightboxImg" src="" alt="">
-    <button class="nav next">&gt;</button>
-    <button class="nav close">ปิด</button>
+  <div class="card">
+    <h3 style="margin:0 0 8px;font-size:15px">บันทึกย้อนหลัง</h3>
+    <div id="timelineList"></div>
   </div>
+</div>
+
+<div id="lightbox" class="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="">
+</div>
 
 <script>
-/* ===== Config ===== */
-const CLEAR_AFTER_SAVE = true;
+const $=id=>document.getElementById(id);
+const WEEK=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+const today=()=>new Date().toISOString().slice(0,10);
+const db=()=>JSON.parse(localStorage.getItem("diary")||"{}");
+function saveDB(d){localStorage.setItem("diary",JSON.stringify(d));}
 
-/* ===== Helpers & DB ===== */
-const $ = (id)=>document.getElementById(id);
-const WEEKDAYS = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
-const todayISO = ()=> new Date().toISOString().slice(0,10);
-const toWeekday = iso => { const d=new Date(iso); return isNaN(d)?"—":WEEKDAYS[d.getDay()]; };
+function updateWeekday(){const d=new Date($("date").value);$("weekday").textContent=isNaN(d)?"—":WEEK[d.getDay()];}
 
-function readDB(){ try{ const raw=localStorage.getItem('dj_db'); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
-function writeDB(db){ localStorage.setItem('dj_db', JSON.stringify(db)); }
-
-/* ===== Image handling ===== */
-function resizeImage(file, maxW=1280, quality=0.85){
-  return new Promise(resolve=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const img=new Image();
-      img.onload=()=>{
-        let w=img.width, h=img.height;
-        if(w>maxW){ h=Math.round(h*(maxW/w)); w=maxW; }
-        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src=e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-/* ===== UI ===== */
-function updateWeekday(){ $('weekday').textContent = toWeekday($('date').value); }
-$('date').addEventListener('change', updateWeekday);
-
-function renderPhotos(arr){
-  const wrap=$('photosPreview'); wrap.innerHTML='';
-  (arr||[]).forEach((src,idx)=>{ const img=document.createElement('img'); img.src=src; img.onclick=()=>openLightbox(arr, idx); wrap.appendChild(img); });
-}
-
-/* ===== Place History (datalist) ===== */
-function buildPlaceHistoryOptions(){
-  const db=readDB();
-  const vals = Object.values(db).map(e=>e?.place?.trim()).filter(Boolean);
-  const freq={}; vals.forEach(v=>freq[v]=(freq[v]||0)+1);
-  const uniq=[...new Set(vals)];
-  uniq.sort((a,b)=>(freq[b]||0)-(freq[a]||0) || a.localeCompare(b));
-  const dl=$('placeList'); dl.innerHTML='';
-  uniq.slice(0,100).forEach(txt=>{
-    const opt=document.createElement('option'); opt.value=txt; dl.appendChild(opt);
-  });
-}
-
-/* ===== Save / Load / Clear ===== */
-async function saveToday(){
-  const db=readDB();
-  const d=$('date').value || todayISO();
-  const place=$('place').value.trim();
-  const place_note=$('place_note').value.trim();
-  const food=$('food').value.trim();
-  const notes=$('notes').value.trim();
-
-  let photos=[];
-  const files=[...$('photosInput').files].slice(0,3);
-  if(files.length){
-    for(const f of files){ photos.push(await resizeImage(f)); }
-  }else if(readDB()[d]?.photos){ photos = readDB()[d].photos; }
-
-  db[d] = { place, place_note, food, notes, photos };
-  writeDB(db);
-
-  renderTimeline();
-  buildPlaceHistoryOptions();
-
-  if (CLEAR_AFTER_SAVE) {
-    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
-    $('photosInput').value=''; renderPhotos([]);
-  } else {
-    loadToday();
-  }
-  alert('บันทึกแล้ว ✓');
-}
-
-function loadToday(){
-  const db=readDB();
-  const d=$('date').value || todayISO();
-  const e=db[d]||{};
-  $('place').value=e.place||'';
-  $('place_note').value=e.place_note||'';
-  $('food').value=e.food||'';
-  $('notes').value=e.notes||'';
-  renderPhotos(e.photos||[]);
-}
-
-function clearToday(){
-  const d=$('date').value || todayISO();
-  const db=readDB();
-  if(!db[d]){ alert('ยังไม่มีข้อมูลวันนี้'); return; }
-  if(confirm('ลบข้อมูลของวันนี้หรือไม่?')){
-    delete db[d]; writeDB(db);
-    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
-    $('photosInput').value=''; renderPhotos([]);
-    renderTimeline(); buildPlaceHistoryOptions();
-  }
-}
-
-/* ===== Timeline (one-line + thumbnails + small actions on right) ===== */
-function oneLineText(it){
-  // "เสาร์ 2025-08-23 The Mall เดินเล่น ข้าว โน้ต…"
-  const bits = [
-    toWeekday(it.date),
-    it.date,
-    it.place || '',
-    it.place_note || '',
-    it.food || '',
-    it.notes ? it.notes.replace(/\s+/g,' ').trim() : ''
-  ].filter(Boolean);
-  return bits.join(' ');
-}
-
-function renderTimeline(){
-  const list=$('timelineList');
-  const db=readDB();
-  const arr=Object.entries(db).map(([date,e])=>({date,...e}));
-  arr.sort((a,b)=> b.date.localeCompare(a.date));
-
-  if(!arr.length){ list.innerHTML='<div class="muted">ยังไม่มีบันทึก</div>'; return; }
-  list.innerHTML='';
-  arr.forEach(it=>{
-    const row=document.createElement('div'); row.className='rowline';
-
-    const txt=document.createElement('div'); txt.className='rowline-text'; txt.textContent=oneLineText(it);
-
-    // thumbnails (click to enlarge)
-    const thumbs=document.createElement('div'); thumbs.className='thumbs-line';
-    (it.photos||[]).forEach((src,idx)=>{
-      const im=document.createElement('img'); im.src=src; im.onclick=()=>openLightbox(it.photos, idx); thumbs.appendChild(im);
-    });
-
-    const actions=document.createElement('div'); actions.className='rowline-actions';
-    const view=document.createElement('button'); view.className='btn-ghost'; view.textContent='เปิดดู/แก้';
-    view.onclick=()=>{ $('date').value=it.date; updateWeekday(); loadToday(); window.scrollTo({top:0,behavior:'smooth'}); };
-    const del=document.createElement('button'); del.className='btn-ghost'; del.textContent='ลบ';
-    del.onclick=()=>{ const db=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete db[it.date]; writeDB(db); renderTimeline(); buildPlaceHistoryOptions(); } };
-    actions.appendChild(view); actions.appendChild(del);
-
-    row.appendChild(txt);
-    if((it.photos||[]).length) row.appendChild(thumbs);
-    row.appendChild(actions);
-    list.appendChild(row);
-  });
-}
-
-/* ===== Lightbox ===== */
-let lbIdx = 0, lbArr = [];
-function openLightbox(arr, start=0){
-  lbArr = arr || []; lbIdx = start||0;
-  if(!lbArr.length) return;
-  const box=$('lightbox'), img=$('lightboxImg');
-  img.src = lbArr[lbIdx];
-  box.style.display='flex';
-}
-function closeLightbox(){ $('lightbox').style.display='none'; }
-function navLightbox(dir){
-  if(!lbArr.length) return;
-  lbIdx = (lbIdx + dir + lbArr.length) % lbArr.length;
-  $('lightboxImg').src = lbArr[lbIdx];
-}
-$('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
-$('lightbox').querySelector('.close').onclick = closeLightbox;
-$('lightbox').querySelector('.prev').onclick = ()=>navLightbox(-1);
-$('lightbox').querySelector('.next').onclick = ()=>navLightbox(1);
-document.addEventListener('keydown', e=>{
-  const box=$('lightbox'); if(box.style.display!=='flex') return;
-  if(e.key==='Escape') closeLightbox();
-  if(e.key==='ArrowLeft') navLightbox(-1);
-  if(e.key==='ArrowRight') navLightbox(1);
-});
-
-/* ===== Export/Import ===== */
-$('exportBtn').onclick = ()=>{
-  const payload = { version:4, plain:true, db: readDB() };
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
-  a.download='daily-journal-export.json'; a.click(); URL.revokeObjectURL(a.href);
-};
-$('importBtn').onclick = ()=> $('importFile').click();
-$('importFile').addEventListener('change', async (e)=>{
-  const file=e.target.files[0]; if(!file) return;
-  try{
-    const text=await file.text(); const payload=JSON.parse(text);
-    const db = payload?.db && typeof payload.db==='object' ? payload.db : payload;
-    if(db && typeof db==='object'){ writeDB(db); loadToday(); renderTimeline(); buildPlaceHistoryOptions(); alert('นำเข้าสำเร็จ ✓'); }
-    else alert('ไฟล์ไม่ถูกต้อง');
-  }catch{ alert('อ่านไฟล์ไม่ได้'); }
-});
-
-/* ===== Boot ===== */
-document.addEventListener('DOMContentLoaded', ()=>{
-  $('date').value = todayISO();
-  $('weekday').textContent = toWeekday($('date').value);
-  $('saveBtn').onclick=saveToday;
-  $('loadBtn').onclick=loadToday;
-  $('clearBtn').onclick=clearToday;
-
-  // photos input -> preview thumbnails (click to enlarge)
-  $('photosInput').addEventListener('change', async (e)=>{
-    const files=[...e.target.files].slice(0,3);
-    const arr=[];
-    for(const f of files){ arr.push(await resizeImage(f)); }
-    renderPhotos(arr);
-  });
-
-  loadToday();
-  renderTimeline();
-  buildPlaceHistoryOptions();
-});
-</script>
-</body>
-</html>
+async function resize(file){return new Promise(r=>{const fr
