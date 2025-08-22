@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Daily Journal — PIN Lock</title>
-  <link rel="manifest" href="manifest.webmanifest?v=2.1">
+  <title>Daily Journal — No PIN</title>
+  <link rel="manifest" href="manifest.webmanifest?v=v3">
   <meta name="theme-color" content="#111827">
   <style>
     :root{--bg:#0b1220;--card:#111827;--muted:#6b7280;--text:#e5e7eb;--accent:#10b981;--danger:#ef4444}
@@ -25,22 +25,17 @@
     .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .thumbs img{width:90px;height:90px;object-fit:cover;border-radius:10px;border:1px solid #374151}
     .muted{color:var(--muted);font-size:12px}
-    .pin-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:50}
-    .pin-modal{width:min(420px,92vw);background:#0f172a;border:1px solid #24304a;border-radius:18px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-    .pin-modal h2{margin:6px 0 12px 0;font-size:18px}
-    .pin-grid{display:grid;gap:10px}
-    .pin-grid input{font-size:20px;letter-spacing:6px;text-align:center;padding:12px;border-radius:12px;border:1px solid #374151;background:#0b1220;color:var(--text)}
-    .pin-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#1f2937;color:#9ca3af;font-size:12px}
-    .ok{color:#10b981}
-    .err{color:#ef4444}
     .spacer{height:8px}
+    .history-list{position:absolute; z-index:40; left:0; right:0; background:#0f172a; border:1px solid #24304a; border-radius:10px; max-height:220px; overflow:auto; display:none; box-shadow:0 10px 24px rgba(0,0,0,.35)}
+    .history-item{padding:8px 12px; cursor:pointer; border-bottom:1px solid #1f2937}
+    .history-item:hover{background:#111827}
     .banner{position:fixed;left:0;right:0;bottom:0;background:#111827;border-top:1px solid #24304a;padding:8px 12px;font-size:12px;color:#9ca3af;z-index:60}
   </style>
 </head>
 <body>
 <header>
-  <h1>📔 Daily Journal <span class="badge">v2.1</span></h1>
+  <h1>📔 Daily Journal <span class="badge">v3 (no PIN)</span></h1>
 </header>
 
 <div class="container">
@@ -55,16 +50,28 @@
         <div id="weekday" class="badge">—</div>
       </div>
     </div>
+
     <div class="row">
-      <div>
-        <label for="place">วันนี้ไปที่ไหน</label>
-        <input id="place" type="text" placeholder="เช่น The Mall Bangkapi" />
+      <div style="position:relative">
+        <label for="place">สถานที่</label>
+        <input id="place" type="text" placeholder="เช่น The Mall Bangkapi" autocomplete="off" />
+        <div id="placeHistory" class="history-list"></div>
+        <div class="muted">คลิกช่องเพื่อดูประวัติสถานที่ที่เคยไป</div>
       </div>
+      <div>
+        <label for="placeNote">โน้ตสถานที่ (ไปทำอะไร)</label>
+        <input id="placeNote" type="text" placeholder="เช่น ส่งของ / เจอลูกค้า / เดินเล่น" />
+      </div>
+    </div>
+
+    <div class="row">
       <div>
         <label for="food">วันนี้กินอะไร</label>
         <input id="food" type="text" placeholder="เช่น ข้าวหมูกรอบ ชานม" />
       </div>
+      <div></div>
     </div>
+
     <div>
       <label for="notes">โน้ตประจำวัน</label>
       <textarea id="notes" placeholder="พิมพ์บันทึก... กดบันทึกเพื่อเก็บข้อมูลไว้ในเครื่อง"></textarea>
@@ -90,28 +97,7 @@
           <button id="importBtn">นำเข้า JSON</button>
           <input id="importFile" type="file" accept="application/json" style="display:none" />
         </div>
-        <div class="spacer"></div>
-        <div class="buttons">
-          <button id="changePinBtn">เปลี่ยน PIN</button>
-          <button id="logoutBtn">ล็อกเอาต์</button>
-        </div>
-        <p class="muted">ข้อมูลทั้งหมดถูกเข้ารหัสในเครื่องคุณด้วยรหัส PIN</p>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- PIN LOCK MODAL -->
-<div class="pin-backdrop" id="pinBackdrop" hidden>
-  <div class="pin-modal">
-    <h2 id="pinTitle">ตั้ง PIN 4 หลักก่อนเริ่มใช้งาน</h2>
-    <div class="pin-grid">
-      <input id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
-      <div class="pin-actions">
-        <button class="primary" id="pinOk">ตกลง</button>
-        <button id="pinForgot">ลืม PIN</button>
-      </div>
-      <div id="pinHint" class="muted"></div>
     </div>
   </div>
 </div>
@@ -121,6 +107,7 @@
 </div>
 
 <script>
+// ===== Utilities =====
 const $ = (id)=>document.getElementById(id);
 function showBanner(msg){ const b=$('banner'); $('bannerText').textContent=msg; b.hidden=false; }
 
@@ -134,118 +121,26 @@ $('date').value = todayISO();
 updateWeekday($('date').value);
 $('date').addEventListener('change', e=>updateWeekday(e.target.value));
 
-// Register SW for offline (ignore failures)
+// Register new SW name to bust old cache
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker-v21.js').catch(()=>{});
+  navigator.serviceWorker.register('service-worker-nopin.js?v=v3').catch(()=>{});
 }
 
-// ---- Storage sanity ----
-function lsGet(k){ try{return localStorage.getItem(k);}catch(e){showBanner('เบราว์เซอร์บล็อคพื้นที่เก็บข้อมูล (โปรดปิดโหมดไม่ระบุตัวตน หรืออนุญาต Storage)'); return null;} }
-function lsSet(k,v){ try{localStorage.setItem(k,v);}catch(e){showBanner('พื้นที่เก็บข้อมูลเต็มหรือถูกบล็อค'); throw e;} }
-function lsDel(k){ try{localStorage.removeItem(k);}catch(e){} }
-
-// ---- Crypto helpers ----
-async function hash(str){
-  const enc = new TextEncoder().encode(str);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return btoa(String.fromCharCode(...new Uint8Array(buf)));
-}
-function b64ToBytes(b64){ const bin = atob(b64); const bytes = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); return bytes; }
-function bytesToB64(bytes){ let bin=''; bytes=new Uint8Array(bytes); for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]); return btoa(bin); }
-async function deriveKey(pin, saltB64){
-  const salt = b64ToBytes(saltB64);
-  const keyMat = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), {name:'PBKDF2'}, false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    {name:'PBKDF2', salt, iterations:120000, hash:'SHA-256'},
-    keyMat,
-    {name:'AES-GCM', length:256},
-    false,
-    ['encrypt','decrypt']
-  );
-}
-async function encryptJSON(key, obj){
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const data = new TextEncoder().encode(JSON.stringify(obj));
-  const cipher = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, data);
-  return { iv: bytesToB64(iv), blob: bytesToB64(new Uint8Array(cipher)) };
-}
-async function decryptJSON(key, ivB64, b64){
-  const iv = b64ToBytes(ivB64);
-  const data = b64ToBytes(b64);
-  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, data);
-  return JSON.parse(new TextDecoder().decode(plain));
-}
-
-// ---- DB ----
-let key; let db={};
-
-// ---- PIN gate ----
-const pinBackdrop = $('pinBackdrop');
-const pinInput = $('pinInput');
-const pinTitle = $('pinTitle');
-const pinHint = $('pinHint');
-
-function openPinModal(title){
-  pinTitle.textContent = title;
-  pinBackdrop.hidden = false;
-  setTimeout(()=>pinInput.focus(), 0);
-}
-
-async function ensurePinThenUnlock(){
+// ===== Plain localStorage DB (no PIN) =====
+function dbLoad(){
   try{
-    const pinHash = lsGet('dj_pin_hash');
-    if(!pinHash){
-      // First-time: set new PIN
-      openPinModal('ตั้ง PIN 4 หลักก่อนเริ่มใช้งาน');
-      return new Promise((resolve)=>{
-        $('pinOk').onclick = async ()=>{
-          const pin = pinInput.value.trim();
-          if(!/^[0-9]{4}$/.test(pin)){ pinHint.innerHTML='<span class="err">กรุณาใส่ PIN 4 หลัก</span>'; return; }
-          const salt = bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
-          const ph = await hash('v1:'+pin+':'+salt);
-          lsSet('dj_pin_hash', ph);
-          lsSet('dj_salt', salt);
-          key = await deriveKey(pin, salt);
-          db = {};
-          const enc = await encryptJSON(key, db);
-          lsSet('dj_iv', enc.iv);
-          lsSet('dj_blob', enc.blob);
-          pinBackdrop.hidden = true;
-          resolve();
-        };
-        $('pinForgot').onclick = ()=> pinHint.innerHTML = '<span class="muted">ยังไม่ได้ตั้ง PIN</span>';
-        pinInput.onkeydown = (e)=>{ if(e.key==='Enter') $('pinOk').click(); };
-      });
-    } else {
-      // Unlock
-      openPinModal('กรอก PIN 4 หลักเพื่อเข้าใช้งาน');
-      return new Promise((resolve)=>{
-        $('pinOk').onclick = async ()=>{
-          const pin = pinInput.value.trim();
-          if(!/^[0-9]{4}$/.test(pin)){ pinHint.innerHTML='<span class="err">PIN ต้องมี 4 หลัก</span>'; return; }
-          const salt = lsGet('dj_salt');
-          const ph = await hash('v1:'+pin+':'+salt);
-          if(ph !== lsGet('dj_pin_hash')){ pinHint.innerHTML='<span class="err">PIN ไม่ถูกต้อง</span>'; return; }
-          key = await deriveKey(pin, salt);
-          try{ db = await decryptJSON(key, lsGet('dj_iv'), lsGet('dj_blob')); }
-          catch(e){ pinHint.innerHTML='<span class="err">ถอดรหัสไม่ได้ (ข้อมูลเสียหาย)</span>'; return; }
-          pinBackdrop.hidden = true;
-          resolve();
-        };
-        $('pinForgot').onclick = ()=>{
-          if(confirm('ลืม PIN?\nการรีเซ็ตจะลบข้อมูลทั้งหมดที่เข้ารหัสอยู่. ดำเนินการต่อหรือไม่?')){ ['dj_pin_hash','dj_salt','dj_iv','dj_blob'].forEach(lsDel); location.reload(); }
-        };
-        pinInput.onkeydown = (e)=>{ if(e.key==='Enter') $('pinOk').click(); };
-      });
-    }
-  }catch(err){
-    console.error(err);
-    showBanner('เกิดข้อผิดพลาดกับ PIN/การเข้ารหัส: '+(err && err.message ? err.message : 'ไม่ทราบสาเหตุ'));
-    throw err;
-  }
+    const raw = localStorage.getItem('dj_db');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ showBanner('อ่านข้อมูลไม่ได้ (จะเริ่มฐานข้อมูลใหม่)'); return {}; }
 }
+function dbSave(db){
+  try{
+    localStorage.setItem('dj_db', JSON.stringify(db));
+  }catch(e){ showBanner('พื้นที่เก็บข้อมูลเต็มหรือถูกบล็อค'); }
+}
+let db = dbLoad();
 
-// ---- Images ----
+// ===== Image resize =====
 function loadImage(file){
   return new Promise((resolve,reject)=>{
     const reader = new FileReader();
@@ -263,8 +158,8 @@ async function resizeImageToDataURL(file, maxW=1280, quality=0.85){
   return canvas.toDataURL('image/jpeg', quality);
 }
 
-// ---- UI ----
-const inputs = { date:$('date'), place:$('place'), food:$('food'), notes:$('notes') };
+// ===== UI =====
+const inputs = { date:$('date'), place:$('place'), placeNote:$('placeNote'), food:$('food'), notes:$('notes') };
 const thumbs = $('thumbs');
 $('photos').addEventListener('change', async (e)=>{
   thumbs.innerHTML='';
@@ -273,30 +168,26 @@ $('photos').addEventListener('change', async (e)=>{
 });
 function gatherPhotosFromThumbs(){ return [...thumbs.querySelectorAll('img')].map(img=>img.src); }
 
-async function encryptAndPersist(){
-  const enc = await encryptJSON(key, db);
-  lsSet('dj_iv', enc.iv);
-  lsSet('dj_blob', enc.blob);
+function renderEntry(entry){
+  inputs.place.value = entry?.place || '';
+  inputs.placeNote.value = entry?.place_note || '';
+  inputs.food.value  = entry?.food  || '';
+  inputs.notes.value = entry?.notes || '';
+  thumbs.innerHTML='';
+  (entry?.photos||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; thumbs.appendChild(img); });
 }
 
 async function saveToday(){
   const d = inputs.date.value || todayISO();
   db[d] = {
     place: inputs.place.value.trim(),
+    place_note: inputs.placeNote.value.trim(),
     food: inputs.food.value.trim(),
     notes: inputs.notes.value.trim(),
     photos: gatherPhotosFromThumbs()
   };
-  await encryptAndPersist();
+  dbSave(db);
   alert('บันทึกแล้ว ✓');
-}
-
-function renderEntry(entry){
-  inputs.place.value = entry?.place || '';
-  inputs.food.value  = entry?.food  || '';
-  inputs.notes.value = entry?.notes || '';
-  thumbs.innerHTML='';
-  (entry?.photos||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; thumbs.appendChild(img); });
 }
 
 async function loadToday(){
@@ -307,7 +198,7 @@ async function loadToday(){
 async function clearToday(){
   const d = inputs.date.value || todayISO();
   if(!db[d]){ alert('ยังไม่มีข้อมูลวันนี้'); return; }
-  if(confirm('ลบข้อมูลของวันที่ี้หรือไม่?')){ delete db[d]; await encryptAndPersist(); renderEntry({}); }
+  if(confirm('ลบข้อมูลของวันที่นี้หรือไม่?')){ delete db[d]; dbSave(db); renderEntry({}); }
 }
 
 $('saveBtn').onclick = saveToday;
@@ -315,45 +206,52 @@ $('loadBtn').onclick = loadToday;
 $('clearBtn').onclick = clearToday;
 
 $('exportBtn').onclick = ()=>{
-  const payload = { version:1, iv: lsGet('dj_iv'), salt: lsGet('dj_salt'), blob: lsGet('dj_blob') };
+  const payload = { version:2, plain:true, db };
   const a = document.createElement('a');
   const data = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   a.href = URL.createObjectURL(data); a.download = 'daily-journal-export.json'; a.click(); URL.revokeObjectURL(a.href);
 };
-
 $('importBtn').onclick = ()=> $('importFile').click();
 $('importFile').addEventListener('change', async (e)=>{
   const file = e.target.files[0]; if(!file) return;
   try{
     const text = await file.text();
     const payload = JSON.parse(text);
-    if(!payload.iv || !payload.salt || !payload.blob) return alert('ไฟล์ไม่ถูกต้อง');
-    if(!confirm('นำเข้าข้อมูลนี้จะทับข้อมูลเดิมทั้งหมด ดำเนินการต่อไหม?')) return;
-    lsSet('dj_iv', payload.iv); lsSet('dj_salt', payload.salt); lsSet('dj_blob', payload.blob);
-    ['dj_pin_hash'].forEach(lsDel);
-    alert('นำเข้าสำเร็จ: รีเฟรชหน้าเพื่อปลดล็อกข้อมูล');
-    location.reload();
+    if(payload && payload.db && typeof payload.db==='object'){ db = payload.db; dbSave(db); alert('นำเข้าสำเร็จ'); renderEntry(db[$('date').value]); }
+    else if (typeof payload === 'object') { db = payload; dbSave(db); alert('นำเข้าสำเร็จ'); renderEntry(db[$('date').value]); }
+    else { alert('ไฟล์ไม่ถูกต้อง'); }
   }catch(err){ alert('อ่านไฟล์ไม่ได้'); }
 });
 
-$('changePinBtn').onclick = async ()=>{
-  const old = prompt('ใส่ PIN เดิม (4 หลัก):'); if(!old) return;
-  const salt = lsGet('dj_salt');
-  const ph = await hash('v1:'+old+':'+salt);
-  if(ph !== lsGet('dj_pin_hash')) return alert('PIN เดิมไม่ถูกต้อง');
-  const n1 = prompt('ตั้ง PIN ใหม่ (4 หลัก):'); if(!n1 || !/^[0-9]{4}$/.test(n1)) return alert('ต้องเป็นตัวเลข 4 หลัก');
-  const n2 = prompt('ยืนยัน PIN ใหม่อีกครั้ง:'); if(n1!==n2) return alert('ไม่ตรงกัน');
-  const newSalt = bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
-  const newKey = await deriveKey(n1, newSalt);
-  const enc = await encryptJSON(newKey, db);
-  lsSet('dj_salt', newSalt); lsSet('dj_iv', enc.iv); lsSet('dj_blob', enc.blob);
-  lsSet('dj_pin_hash', await hash('v1:'+n1+':'+newSalt));
-  key = newKey; alert('เปลี่ยน PIN เรียบร้อย');
-};
+// ===== Place History below input =====
+function getPlaceHistory() {
+  const vals = Object.values(db).map(e => (e && e.place ? e.place.trim() : '')).filter(Boolean);
+  const freq = {};
+  vals.forEach(v => freq[v] = (freq[v]||0)+1);
+  const uniq = [...new Set(vals)];
+  uniq.sort((a,b)=> (freq[b]||0)-(freq[a]||0) || a.localeCompare(b));
+  return uniq;
+}
+const placeInput = $('place');
+const placeHistBox = $('placeHistory');
+function renderPlaceHistory(filter=''){
+  const arr = getPlaceHistory().filter(v=>v.toLowerCase().includes(filter.toLowerCase()));
+  placeHistBox.innerHTML='';
+  if(!arr.length){ placeHistBox.style.display='none'; return; }
+  arr.slice(0,30).forEach(txt=>{
+    const div = document.createElement('div');
+    div.className='history-item'; div.textContent = txt;
+    div.onclick = ()=>{ placeInput.value = txt; placeHistBox.style.display='none'; };
+    placeHistBox.appendChild(div);
+  });
+  placeHistBox.style.display='block';
+}
+placeInput.addEventListener('focus', ()=>renderPlaceHistory(placeInput.value));
+placeInput.addEventListener('input', ()=>renderPlaceHistory(placeInput.value));
+document.addEventListener('click', (e)=>{ if(e.target!==placeInput && !placeHistBox.contains(e.target)) placeHistBox.style.display='none'; });
 
-$('logoutBtn').onclick = ()=>{ alert('ออกจากระบบแล้ว'); location.reload(); };
-
-ensurePinThenUnlock().then(()=>{ $('notes').placeholder = 'พิมพ์บันทึก...'; }).catch(()=>{});
+// Load current date entry on start
+loadToday();
 </script>
 
 </body>
