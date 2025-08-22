@@ -1,7 +1,7 @@
 {
   "name": "Daily Journal (PIN)",
   "short_name": "Journal",
-  "start_url": "./?v2",
+  "start_url": "./?v=2.1",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#111827",
