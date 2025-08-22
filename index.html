@@ -1,60 +1,41 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ไดอารี่ประจำวัน</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      margin: 0;
-      padding: 20px;
+    :root{
+      --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e2e8f0;
+      --line:#1f2937; --btn:#1f2937; --primary:#2563eb; --danger:#dc2626;
     }
-    .container {
-      max-width: 700px;
-      margin: auto;
-      display: grid;
-      gap: 20px;
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", sans-serif}
+    .container{max-width:900px;margin:0 auto;padding:20px;display:grid;gap:16px}
+    h1{margin:0 0 6px 0;text-align:center}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+    label{font-size:13px;color:var(--muted);display:block;margin:10px 0 6px}
+    input,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid #374151;background:#0b1220;color:var(--text)}
+    textarea{min-height:110px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .muted{color:var(--muted);font-size:12px}
+    .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .photos img{width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid #374151}
+    .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    button{border:0;border-radius:10px;padding:10px 14px;background:var(--btn);color:var(--text);cursor:pointer}
+    button.primary{background:var(--primary);color:#fff}
+    button.danger{background:var(--danger);color:#fff}
+    /* Timeline */
+    #timelineList{display:grid;gap:8px}
+    .rowline{
+      border:1px solid var(--line);border-radius:12px;background:#0b1220;padding:10px;display:grid;gap:6px
     }
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    label { font-weight: bold; }
-    input, textarea, select, button {
-      width: 100%;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #1e293b;
-      color: #e2e8f0;
-      box-sizing: border-box;
-    }
-    textarea { min-height: 70px; resize: vertical; }
-    .card {
-      background: #1e293b;
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-    .photos img {
-      width: 80px; height: 80px; object-fit: cover;
-      border-radius: 10px; border: 1px solid #475569;
-    }
-    .actions { display: flex; gap: 10px; margin-top: 10px; }
-    button { cursor: pointer; border: none; }
-    button.danger { background: #dc2626; color: white; }
-    button.primary { background: #2563eb; color: white; }
-    .muted { color: #94a3b8; font-size: 0.9em; }
-    .badge {
-      background: #334155; color: #e2e8f0;
-      padding: 2px 6px; border-radius: 6px; font-size: 0.8em;
-    }
+    .rowline-head{display:flex;align-items:center;gap:10px}
+    .badge{background:#1f2937;color:#9ca3af;border-radius:999px;padding:2px 8px;font-size:12px}
+    .rowline-actions{margin-left:auto;display:flex;gap:6px}
+    .btn-ghost{background:#1f2937; color:#e5e7eb; padding:6px 8px; border-radius:8px; font-size:12px}
+    .inline-muted{color:var(--muted);font-size:13px}
   </style>
 </head>
 <body>
@@ -62,90 +43,98 @@
     <h1>📖 ไดอารี่ประจำวัน</h1>
 
     <div class="card">
-      <label>วันที่</label>
-      <input type="date" id="date">
+      <div class="row">
+        <div>
+          <label for="date">วันที่</label>
+          <input id="date" type="date" />
+        </div>
+        <div>
+          <label>วันในสัปดาห์</label>
+          <div id="weekday" class="badge">—</div>
+        </div>
+      </div>
 
-      <label style="margin-top:10px">วันนี้ไปที่ไหน</label>
-      <input type="text" id="place" placeholder="เช่น Central, The Mall">
-      <label>หมายเหตุสถานที่</label>
-      <input type="text" id="place_note" placeholder="ไปทำอะไร">
+      <div class="row">
+        <div>
+          <label for="place">วันนี้ไปไหนดี (เลือกจากประวัติได้)</label>
+          <input id="place" type="text" list="placeList" placeholder="เช่น The Mall, Central" autocomplete="off" />
+          <datalist id="placeList"></datalist>
+          <div class="muted">คลิก/พิมพ์ เพื่อเลือกจากประวัติสถานที่ที่เคยไป</div>
+        </div>
+        <div>
+          <label for="place_note">โน้ตสถานที่ (ไปทำอะไร)</label>
+          <input id="place_note" type="text" placeholder="เช่น เดินเล่น / ส่งของ / เจอลูกค้า" />
+        </div>
+      </div>
 
-      <label style="margin-top:10px">วันนี้กินอะไร</label>
-      <input type="text" id="food" placeholder="เช่น ข้าวมันไก่, ชาบู">
+      <div class="row">
+        <div>
+          <label for="food">วันนี้กินอะไร</label>
+          <input id="food" type="text" placeholder="เช่น ข้าวหมูกรอบ ชานม" />
+        </div>
+        <div></div>
+      </div>
 
-      <label style="margin-top:10px">โน้ตประจำวัน</label>
-      <textarea id="notes" placeholder="เขียนโน้ตได้หลายบรรทัด..."></textarea>
+      <div>
+        <label for="notes">โน้ตประจำวัน</label>
+        <textarea id="notes" placeholder="พิมพ์บันทึก..."></textarea>
+      </div>
 
-      <label style="margin-top:10px">แนบรูป (สูงสุด 3)</label>
-      <input type="file" id="photosInput" accept="image/*" multiple>
-      <div class="photos" id="photosPreview"></div>
-
-      <div class="actions">
-        <button class="primary" onclick="saveToday()">บันทึก</button>
-        <button onclick="clearToday()">ล้าง</button>
+      <div class="row">
+        <div>
+          <label for="photosInput">แนบรูป (สูงสุด 3)</label>
+          <input id="photosInput" type="file" accept="image/*" multiple />
+          <div class="muted">รูปจะถูกย่ออัตโนมัติ เพื่อประหยัดพื้นที่</div>
+          <div id="photosPreview" class="photos"></div>
+        </div>
+        <div>
+          <label>การทำงาน</label>
+          <div class="buttons">
+            <button class="primary" id="saveBtn">บันทึก</button>
+            <button id="loadBtn">โหลด</button>
+            <button class="danger" id="clearBtn">ลบข้อมูลวันนี้</button>
+          </div>
+          <div class="buttons">
+            <button id="exportBtn">ส่งออก JSON</button>
+            <button id="importBtn">นำเข้า JSON</button>
+            <input id="importFile" type="file" accept="application/json" style="display:none" />
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Timeline -->
-    <div class="card" id="timeline">
+    <div class="card">
       <h3 style="margin:0 0 10px 0;font-size:16px">บันทึกย้อนหลัง</h3>
-      <div id="timelineList" style="display:grid;gap:8px"></div>
+      <div id="timelineList"></div>
     </div>
   </div>
 
 <script>
+/* ===== Config ===== */
+const CLEAR_AFTER_SAVE = true; // เปลี่ยนเป็น false ถ้าไม่อยากให้เคลียร์ฟอร์มหลังบันทึก
+
+/* ===== Helpers & DB ===== */
+const $ = (id)=>document.getElementById(id);
 const WEEKDAYS = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+function toWeekday(iso){ const d=new Date(iso); return isNaN(d)?"—":WEEKDAYS[d.getDay()]; }
 
-function toWeekday(iso){
-  const d = new Date(iso);
-  return isNaN(d)? "—" : WEEKDAYS[d.getDay()];
-}
+function readDB(){ try{ const raw=localStorage.getItem('dj_db'); return raw? JSON.parse(raw):{}; }catch{ return {}; } }
+function writeDB(db){ localStorage.setItem('dj_db', JSON.stringify(db)); }
 
-function readDB(){
-  try{
-    const raw = localStorage.getItem('dj_db');
-    return raw? JSON.parse(raw): {};
-  } catch { return {}; }
-}
-
-function writeDB(db){
-  localStorage.setItem('dj_db', JSON.stringify(db));
-}
-
-function loadToday(){
-  const db = readDB();
-  const date = document.getElementById('date').value;
-  const entry = db[date] || {};
-  document.getElementById('place').value = entry.place || '';
-  document.getElementById('place_note').value = entry.place_note || '';
-  document.getElementById('food').value = entry.food || '';
-  document.getElementById('notes').value = entry.notes || '';
-  renderPhotos(entry.photos || []);
-}
-
-function renderPhotos(arr){
-  const preview = document.getElementById('photosPreview');
-  preview.innerHTML = '';
-  arr.forEach(src=>{
-    const img=document.createElement('img');
-    img.src=src;
-    preview.appendChild(img);
-  });
-}
-
-function resizeImage(file, maxSize=800){
+/* ===== Image handling ===== */
+function resizeImage(file, maxW=1280, quality=0.85){
   return new Promise(resolve=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
       const img=new Image();
       img.onload=()=>{
         let w=img.width, h=img.height;
-        if(w>h){ if(w>maxSize){ h*=maxSize/w; w=maxSize; } }
-        else { if(h>maxSize){ w*=maxSize/h; h=maxSize; } }
-        const canvas=document.createElement('canvas');
-        canvas.width=w; canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg',0.8));
+        if(w>maxW){ h=Math.round(h*(maxW/w)); w=maxW; }
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.src=e.target.result;
     };
@@ -153,61 +142,113 @@ function resizeImage(file, maxSize=800){
   });
 }
 
+/* ===== UI Bindings ===== */
+function updateWeekday(){ $('weekday').textContent = toWeekday($('date').value); }
+$('date').addEventListener('change', updateWeekday);
+
+function renderPhotos(arr){
+  const wrap=$('photosPreview'); wrap.innerHTML='';
+  (arr||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; wrap.appendChild(img); });
+}
+
+/* ===== Place History (datalist) ===== */
+function buildPlaceHistoryOptions(){
+  const db=readDB();
+  const vals = Object.values(db).map(e=>e?.place?.trim()).filter(Boolean);
+  const freq={}; vals.forEach(v=>freq[v]=(freq[v]||0)+1);
+  const uniq=[...new Set(vals)];
+  uniq.sort((a,b)=>(freq[b]||0)-(freq[a]||0) || a.localeCompare(b));
+  const dl=$('placeList'); dl.innerHTML='';
+  uniq.slice(0,100).forEach(txt=>{
+    const opt=document.createElement('option'); opt.value=txt; dl.appendChild(opt);
+  });
+}
+
+/* ===== Save / Load / Clear ===== */
 async function saveToday(){
-  const db = readDB();
-  const date = document.getElementById('date').value;
-  const place = document.getElementById('place').value.trim();
-  const place_note = document.getElementById('place_note').value.trim();
-  const food = document.getElementById('food').value.trim();
-  const notes = document.getElementById('notes').value.trim();
+  const db=readDB();
+  const d=$('date').value || todayISO();
+  const place=$('place').value.trim();
+  const place_note=$('place_note').value.trim();
+  const food=$('food').value.trim();
+  const notes=$('notes').value.trim();
 
-  let photos = [];
-  const input = document.getElementById('photosInput');
-  for(const f of Array.from(input.files).slice(0,3)){
-    const base64 = await resizeImage(f);
-    photos.push(base64);
-  }
-  // ถ้าไม่มีอัปใหม่ ใช้ของเดิม
-  if(photos.length===0 && db[date]) photos = db[date].photos || [];
+  // photos: ถ้ามีไฟล์ใหม่ -> ย่อแล้วบันทึก, ถ้าไม่มี -> เก็บของเดิมไว้
+  let photos=[];
+  const files=[...$('photosInput').files].slice(0,3);
+  if(files.length){
+    for(const f of files){ photos.push(await resizeImage(f)); }
+  }else if(readDB()[d]?.photos){ photos = readDB()[d].photos; }
 
-  db[date] = { place, place_note, food, notes, photos };
+  db[d] = { place, place_note, food, notes, photos };
   writeDB(db);
-  loadToday();
+
+  // อัปเดตรายการ & ประวัติสถานที่
   renderTimeline();
-  alert("บันทึกแล้ว");
+  buildPlaceHistoryOptions();
+
+  if (CLEAR_AFTER_SAVE) {
+    // เคลียร์เฉพาะฟอร์ม (ไม่ยุ่งกับวันที่)
+    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
+    $('photosInput').value=''; renderPhotos([]);
+  } else {
+    // โหลดข้อมูลที่เพิ่งบันทึกกลับขึ้นฟอร์ม (คงค่าไว้)
+    loadToday();
+  }
+  alert('บันทึกแล้ว ✓');
+}
+
+function loadToday(){
+  const db=readDB();
+  const d=$('date').value || todayISO();
+  const e=db[d]||{};
+  $('place').value=e.place||'';
+  $('place_note').value=e.place_note||'';
+  $('food').value=e.food||'';
+  $('notes').value=e.notes||'';
+  renderPhotos(e.photos||[]);
 }
 
 function clearToday(){
-  document.getElementById('place').value='';
-  document.getElementById('place_note').value='';
-  document.getElementById('food').value='';
-  document.getElementById('notes').value='';
-  document.getElementById('photosInput').value='';
-  document.getElementById('photosPreview').innerHTML='';
+  const d=$('date').value || todayISO();
+  const db=readDB();
+  if(!db[d]){ alert('ยังไม่มีข้อมูลวันนี้'); return; }
+  if(confirm('ลบข้อมูลของวันนี้หรือไม่?')){
+    delete db[d]; writeDB(db);
+    $('place').value=''; $('place_note').value=''; $('food').value=''; $('notes').value='';
+    $('photosInput').value=''; renderPhotos([]);
+    renderTimeline(); buildPlaceHistoryOptions();
+  }
 }
 
+/* ===== Timeline (latest first) ===== */
 function renderTimeline(){
-  const list=document.getElementById('timelineList');
+  const list=$('timelineList');
   const db=readDB();
   const arr=Object.entries(db).map(([date,e])=>({date,...e}));
-  arr.sort((a,b)=>b.date.localeCompare(a.date)); // ล่าสุดอยู่บน
+  arr.sort((a,b)=> b.date.localeCompare(a.date)); // ล่าสุดอยู่บน
 
-  if(!arr.length){
-    list.innerHTML=`<div class="muted">ยังไม่มีบันทึก</div>`;
-    return;
-  }
+  if(!arr.length){ list.innerHTML='<div class="muted">ยังไม่มีบันทึก</div>'; return; }
   list.innerHTML='';
-  for(const it of arr){
-    const card=document.createElement('div');
-    card.style.cssText=`
-      border:1px solid #1f2937;border-radius:12px;padding:10px;background:#0d1628;
-      display:grid;gap:6px;`;
+  arr.forEach(it=>{
+    const row=document.createElement('div');
+    row.className='rowline';
 
-    const header=document.createElement('div');
-    header.innerHTML=`<b>${it.date}</b> <span class="badge">${toWeekday(it.date)}</span>`;
+    const head=document.createElement('div');
+    head.className='rowline-head';
+    head.innerHTML=`<strong>${it.date}</strong><span class="badge">${toWeekday(it.date)}</span>`;
+
+    const actions=document.createElement('div');
+    actions.className='rowline-actions';
+    const view=document.createElement('button'); view.className='btn-ghost'; view.textContent='เปิดดู/แก้';
+    view.onclick=()=>{ $('date').value=it.date; updateWeekday(); loadToday(); window.scrollTo({top:0,behavior:'smooth'}); };
+    const del=document.createElement('button'); del.className='btn-ghost'; del.textContent='ลบ';
+    del.onclick=()=>{ const db=readDB(); if(confirm(`ลบรายการวันที่ ${it.date}?`)){ delete db[it.date]; writeDB(db); renderTimeline(); buildPlaceHistoryOptions(); } };
+    actions.appendChild(view); actions.appendChild(del);
+    head.appendChild(actions);
 
     const line=document.createElement('div');
-    line.className='muted';
+    line.className='inline-muted';
     const parts=[];
     if(it.place) parts.push(`📍 ${it.place}`);
     if(it.place_note) parts.push(`📝 ${it.place_note}`);
@@ -217,52 +258,45 @@ function renderTimeline(){
     const notes=document.createElement('div');
     if(it.notes){ notes.textContent=it.notes; notes.style.whiteSpace='pre-wrap'; }
 
-    const pics=document.createElement('div');
-    pics.className='photos';
-    (it.photos||[]).forEach(src=>{
-      const img=document.createElement('img');
-      img.src=src;
-      pics.appendChild(img);
-    });
+    const pics=document.createElement('div'); pics.className='photos';
+    (it.photos||[]).forEach(src=>{ const img=document.createElement('img'); img.src=src; pics.appendChild(img); });
 
-    const actions=document.createElement('div');
-    actions.className='actions';
-    const viewBtn=document.createElement('button');
-    viewBtn.textContent='เปิดดู/แก้';
-    viewBtn.onclick=()=>{
-      document.getElementById('date').value=it.date;
-      loadToday();
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
-    const delBtn=document.createElement('button');
-    delBtn.textContent='ลบ';
-    delBtn.className='danger';
-    delBtn.onclick=()=>{
-      if(confirm(`ลบรายการวันที่ ${it.date}?`)){
-        delete db[it.date];
-        writeDB(db);
-        renderTimeline();
-      }
-    };
-    actions.appendChild(viewBtn);
-    actions.appendChild(delBtn);
-
-    card.appendChild(header);
-    if(parts.length) card.appendChild(line);
-    if(it.notes) card.appendChild(notes);
-    if((it.photos||[]).length) card.appendChild(pics);
-    card.appendChild(actions);
-
-    list.appendChild(card);
-  }
+    row.appendChild(head);
+    if(parts.length) row.appendChild(line);
+    if(it.notes) row.appendChild(notes);
+    if((it.photos||[]).length) row.appendChild(pics);
+    list.appendChild(row);
+  });
 }
 
-// init
-document.addEventListener('DOMContentLoaded',()=>{
-  const today=new Date().toISOString().split('T')[0];
-  document.getElementById('date').value=today;
+/* ===== Export/Import ===== */
+$('exportBtn').onclick = ()=>{
+  const payload = { version:3, plain:true, db: readDB() };
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  a.download='daily-journal-export.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+$('importBtn').onclick = ()=> $('importFile').click();
+$('importFile').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  try{
+    const text=await file.text(); const payload=JSON.parse(text);
+    const db = payload?.db && typeof payload.db==='object' ? payload.db : payload;
+    if(db && typeof db==='object'){ writeDB(db); loadToday(); renderTimeline(); buildPlaceHistoryOptions(); alert('นำเข้าสำเร็จ ✓'); }
+    else alert('ไฟล์ไม่ถูกต้อง');
+  }catch{ alert('อ่านไฟล์ไม่ได้'); }
+});
+
+/* ===== Boot ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  $('date').value = todayISO();
+  updateWeekday();
   loadToday();
   renderTimeline();
+  buildPlaceHistoryOptions();
+  $('saveBtn').onclick=saveToday;
+  $('loadBtn').onclick=loadToday;
+  $('clearBtn').onclick=clearToday;
 });
 </script>
 </body>
